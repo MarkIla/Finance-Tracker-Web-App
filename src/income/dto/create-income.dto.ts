@@ -7,7 +7,7 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
-export class CreateExpenseDto {
+export class CreateIncomeDto {
   @Type(() => Number)
   @IsNumber()
   @Min(0.01)
@@ -15,13 +15,13 @@ export class CreateExpenseDto {
 
   @IsString()
   @IsOptional()
-  currency?: string; // keep it free-form for now
+  currency?: string; 
 
   @IsString()
-  category: string;
+  source: string;
 
   @IsISO8601()
-  incurredAt: string; // ISO string; converted to Date in service
+  receivedAt: string;           // ISO string
 
   @IsOptional()
   @IsString()

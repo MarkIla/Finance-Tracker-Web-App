@@ -4,10 +4,13 @@ import { AppService } from './app.service';
 import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
 import { ExpenseModule } from './expense/expense.module';
+import { IncomeModule } from './income/income.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { User } from './user/user.entity';
 import { Expense } from './expense/expense.entity';
+import { Income } from './income/income.entity';
+
 
 @Module({
   imports: [
@@ -21,7 +24,10 @@ import { Expense } from './expense/expense.entity';
         username: configService.get<string>('DB_USERNAME'),
         password: configService.get<string>('DB_PASSWORD'),
         database: configService.get<string>('DB_NAME'),
-        entities: [User, Expense],
+        entities: [
+          User, 
+          Expense, 
+          Income],
         synchronize: configService.get<string>('NODE_ENV') === 'development',
         logging: false, // Shows SQL queries in console
         ssl: false, 
@@ -33,7 +39,8 @@ import { Expense } from './expense/expense.entity';
     }),
     UserModule, 
     AuthModule, 
-    ExpenseModule
+    ExpenseModule, 
+    IncomeModule
   ],
   controllers: [AppController],
   providers: [AppService],

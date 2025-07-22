@@ -1,4 +1,5 @@
 import { Expense } from 'src/expense/expense.entity';
+import { Income } from 'src/income/income.entity';
 import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
 
 @Entity()
@@ -17,6 +18,9 @@ export class User {
 
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   created_at: Date;
+
+  @OneToMany(() => Income, (income) => income.user)
+  incomes: Income[];
 
   @OneToMany(() => Expense, (expense) => expense.user)
   expenses: Expense[];
