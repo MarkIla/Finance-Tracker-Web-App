@@ -11,6 +11,7 @@ import { User } from './user/user.entity';
 import { Expense } from './expense/expense.entity';
 import { Income } from './income/income.entity';
 import { SummaryModule } from './summary/summary.module';
+import { FilesModule } from './files/files.module';
 
 
 @Module({
@@ -42,7 +43,8 @@ import { SummaryModule } from './summary/summary.module';
     AuthModule, 
     ExpenseModule, 
     IncomeModule, 
-    SummaryModule
+    SummaryModule, 
+    FilesModule
   ],
   controllers: [AppController],
   providers: [AppService],

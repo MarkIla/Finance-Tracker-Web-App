@@ -27,6 +27,9 @@ export class Income {
   @Column({ nullable: true })
   note?: string;
 
+  @Column({ nullable: true })
+  receiptUrl?: string;
+
   @ManyToOne(() => User, (u) => u.incomes, { onDelete: 'CASCADE' })
   user: User;
 

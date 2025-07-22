@@ -26,4 +26,9 @@ export class CreateIncomeDto {
   @IsOptional()
   @IsString()
   note?: string;
+
+  /** S3/R2 object key (optional) */
+  @IsOptional()
+  @IsString()
+  receiptKey?: string;
 }
