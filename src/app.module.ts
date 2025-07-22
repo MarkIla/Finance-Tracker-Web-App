@@ -10,6 +10,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { User } from './user/user.entity';
 import { Expense } from './expense/expense.entity';
 import { Income } from './income/income.entity';
+import { SummaryModule } from './summary/summary.module';
 
 
 @Module({
@@ -40,7 +41,8 @@ import { Income } from './income/income.entity';
     UserModule, 
     AuthModule, 
     ExpenseModule, 
-    IncomeModule
+    IncomeModule, 
+    SummaryModule
   ],
   controllers: [AppController],
   providers: [AppService],
