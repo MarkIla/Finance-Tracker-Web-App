@@ -11,15 +11,30 @@ export class AuthController {
 
   /* POST /auth/register */
   @Post('register')
-  register(@Body() dto: RegisterDto) {
-    return this.auth.register(dto);
+  async register(@Body() dto: RegisterDto, @Res({ passthrough: true }) res: Response) {
+    const { accessToken } = await this.auth.register(dto);
+    res.cookie('auth', accessToken, { httpOnly: true, sameSite: 'lax', path: '/' });
+    return { ok: true };
   }
 
   /* POST /auth/login */
   @Post('login')
-  login(@Body() dto: LoginDto) {
-    return this.auth.login(dto);
-  }
+  async login(
+  @Body() dto: LoginDto,
+  @Res({ passthrough: true }) res: Response,
+) {
+  const { accessToken } = await this.auth.login(dto);
+
+  res.cookie('auth', accessToken, {
+    httpOnly: true,
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 1000 * 60 * 60 * 24,
+  });
+
+  // 👇 send token back so front-end can decode
+  return { accessToken };
+}
 
   /* GET /auth/refresh
      Front-end calls this when access-token expired.
@@ -29,5 +44,11 @@ export class AuthController {
   refresh(@Req() req: Request) {
     const user = req.user as { id: string };
     return this.auth.refresh(user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('me')
+  me(@Req() req: Request) {
+    return req.user;                 // { sub, email }
   }
 }

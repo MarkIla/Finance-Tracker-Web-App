@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
@@ -19,18 +19,18 @@ export class AuthService {
   ) {}
 
    /* ------------ Registration ------------ */
-  async register(dto: RegisterDto): Promise<TokenResponse> {
-    const existing = await this.usersRepo.findOne({ where: { email: dto.email } });
-    if (existing) throw new BadRequestException('Email already in use');
+  async register(dto: RegisterDto) {
+    const exists = await this.usersRepo.findOneBy({ email: dto.email });
+    if (exists) {
+      throw new ConflictException('email_exists');
+    }
 
-    const rounds = parseInt(this.config.get('BCRYPT_ROUNDS', '12'), 10);
-    const hash = await bcrypt.hash(dto.password, rounds);
-    const user = this.usersRepo.create({ 
-      email: dto.email, 
-      passwordHash: hash });
+    const hash = await bcrypt.hash(dto.password, 10);
+    const user = this.usersRepo.create({ ...dto, passwordHash: hash });
     await this.usersRepo.save(user);
 
-    return this.issueAccessToken(user);
+    const accessToken = this.jwt.sign({ sub: user.id, email: user.email });
+    return { accessToken };
   }
 
   /* --------------- Login --------------- */
