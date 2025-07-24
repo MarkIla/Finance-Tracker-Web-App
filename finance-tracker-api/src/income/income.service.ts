@@ -18,7 +18,7 @@ export class IncomeService {
     const income = this.repo.create({
       ...dto,
       receivedAt: new Date(dto.receivedAt),
-      receiptUrl: dto.receiptKey ?? null,
+      receiptKey: dto.receiptKey ?? null,
       user: { id: userId } as any,
     });
     return this.repo.save(income);
@@ -52,7 +52,7 @@ export class IncomeService {
     const inc = await this.findOne(id, userId);
     Object.assign(inc, dto);
     if (dto.receivedAt) inc.receivedAt = new Date(dto.receivedAt);
-    if (dto.receiptKey !== undefined) inc.receiptUrl = dto.receiptKey || null;
+    if (dto.receiptKey !== undefined) inc.receiptKey = dto.receiptKey || null;
     return this.repo.save(inc);
   }
 

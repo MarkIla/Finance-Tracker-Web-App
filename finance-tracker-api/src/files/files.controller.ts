@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Query, UseGuards } from '@nestjs/common';
+import { Controller, Post, Get, Query, UseGuards, Param } from '@nestjs/common';
 import { FilesService } from './files.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
@@ -15,8 +15,8 @@ export class FilesController {
     return this.files.presignUpload(filename, mime);
   }
 
-  @Get('presign-download')
-  presignDownload(@Query('key') key: string) {
+  @Get('presign-download/:key')
+  presignDownload(@Param('key') key: string) {
     return this.files.presignDownload(key);
   }
 }

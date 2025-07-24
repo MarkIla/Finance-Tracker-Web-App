@@ -31,4 +31,9 @@ export class CreateIncomeDto {
   @IsOptional()
   @IsString()
   receiptKey?: string;
+
+  @IsOptional() 
+  @IsString()
+  receiptName?: string;
+  
 }

@@ -28,7 +28,10 @@ export class Expense {
   note?: string;
 
   @Column({ nullable: true })
-  receiptUrl?: string;
+  receiptKey?: string;
+
+  @Column({ nullable: true })
+  receiptName?: string; 
 
   @ManyToOne(() => User, (u) => u.expenses, { onDelete: 'CASCADE' })
   user: User;

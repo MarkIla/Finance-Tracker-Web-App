@@ -16,7 +16,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 
 @UseGuards(JwtAuthGuard)
-@Controller('income')
+@Controller('incomes')
 export class IncomeController {
   constructor(private readonly service: IncomeService) {}
 

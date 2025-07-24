@@ -17,7 +17,7 @@ export class ExpenseService {
     const expense = this.repo.create({
       ...dto,
       incurredAt: new Date(dto.incurredAt),
-      receiptUrl: dto.receiptKey ?? null,      // store key (or null)
+      receiptKey: dto.receiptKey ?? null,      // store key (or null)
       user: { id: userId } as any,
     });
     return this.repo.save(expense);
@@ -51,7 +51,7 @@ export class ExpenseService {
     const exp = await this.findOne(id, userId);
     Object.assign(exp, dto);
     if (dto.incurredAt) exp.incurredAt = new Date(dto.incurredAt);
-    if (dto.receiptKey !== undefined) exp.receiptUrl = dto.receiptKey || null;
+    if (dto.receiptKey !== undefined) exp.receiptKey = dto.receiptKey || null;
     return this.repo.save(exp);
   }
 

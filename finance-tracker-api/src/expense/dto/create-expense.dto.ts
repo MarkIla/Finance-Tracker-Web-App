@@ -31,4 +31,8 @@ export class CreateExpenseDto {
   @IsOptional()
   @IsString()
   receiptKey?: string;
+
+  @IsOptional() 
+  @IsString()
+  receiptName?: string;
 }
