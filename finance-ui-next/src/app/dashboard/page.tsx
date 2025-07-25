@@ -18,8 +18,10 @@ import {
   YAxis,
   type PieLabelRenderProps,
 } from 'recharts';
+import { useAuth } from '@/app/lib/auth-context';
+import ConfirmModal from '@/components/ConfirmModal';
 
-/* ───────────────────── helpers ───────────────────── */
+/* ───────────────────────── helpers ───────────────────────── */
 const COLORS = [
   '#2563EB',
   '#10B981',
@@ -30,11 +32,13 @@ const COLORS = [
   '#14B8A6',
   '#FB923C',
 ];
+
 interface CategorySlice {
   category: string;
   total: number;
   percent: number;
 }
+
 function useMonth() {
   const d = new Date();
   const [month, setMonth] = useState(
@@ -43,9 +47,13 @@ function useMonth() {
   return { month, setMonth };
 }
 
-/* ───────────────────── dashboard ───────────────────── */
+/* ───────────────────────── page ───────────────────────── */
 export default function DashboardPage() {
   const { month, setMonth } = useMonth();
+  const { logout } = useAuth();
+
+  /* confirmation dialog */
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   /* summary + charts */
   const summaryQ = useQuery({
@@ -76,12 +84,14 @@ export default function DashboardPage() {
         .then((r) => r.data),
   }).data as any[] | undefined;
 
-  /* ────────────────── ui ────────────────── */
+  /* ───────────────────────── ui ───────────────────────── */
   return (
     <RequireAuth>
       <main className="p-8 text-gray-100">
+        {/* header row */}
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
           <h1 className="text-2xl font-bold">Dashboard</h1>
+
           <div className="flex gap-3">
             <Link
               href="/expenses"
@@ -95,9 +105,16 @@ export default function DashboardPage() {
             >
               Manage Incomes
             </Link>
+            <button
+              onClick={() => setShowLogoutConfirm(true)}
+              className="rounded bg-gray-700 px-4 py-2 text-sm font-medium hover:bg-gray-600"
+            >
+              Log&nbsp;out
+            </button>
           </div>
         </div>
 
+        {/* month picker */}
         <label className="mb-6 inline-block text-sm">
           Month:{' '}
           <input
@@ -108,7 +125,7 @@ export default function DashboardPage() {
           />
         </label>
 
-        {/* high-contrast cards */}
+        {/* KPI cards */}
         <div className="grid gap-4 sm:grid-cols-3">
           {['incomeTotal', 'expenseTotal', 'monthlyBalance'].map((k) => (
             <div key={k} className="rounded-lg bg-gray-900 p-6 shadow">
@@ -175,7 +192,10 @@ export default function DashboardPage() {
                 </Pie>
                 <Tooltip
                   formatter={(v: number) =>
-                    v.toLocaleString(undefined, { style: 'currency', currency: 'PHP' })
+                    v.toLocaleString(undefined, {
+                      style: 'currency',
+                      currency: 'PHP',
+                    })
                   }
                 />
               </PieChart>
@@ -237,6 +257,20 @@ export default function DashboardPage() {
             />
           </section>
         </div>
+
+        {/* logout confirmation dialog */}
+        {showLogoutConfirm && (
+          <ConfirmModal
+            title="Log out"
+            message="Are you sure you want to log out?"
+            onCancel={() => setShowLogoutConfirm(false)}
+            onConfirm={() => {
+              setShowLogoutConfirm(false);
+              logout();
+            }}
+            confirmLabel='Log Out'
+          />
+        )}
       </main>
     </RequireAuth>
   );

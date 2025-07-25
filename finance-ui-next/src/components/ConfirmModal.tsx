@@ -1,34 +1,44 @@
 'use client';
-import { ReactNode } from 'react';
+
+interface Props {
+  title: string;
+  message: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+  confirmLabel?: string;
+  cancelLabel?: string;
+}
 
 export default function ConfirmModal({
   title,
   message,
   onConfirm,
   onCancel,
-}: {
-  title: string;
-  message: string;
-  onConfirm: () => void;
-  onCancel: () => void;
-}) {
+  confirmLabel = 'Delete',
+  cancelLabel = 'Cancel',
+}: Props) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="w-80 rounded-lg bg-white p-6 shadow-lg">
-        <h3 className="mb-2 text-lg font-semibold">{title}</h3>
-        <p className="mb-6 text-sm text-gray-700">{message}</p>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+      <div className="w-80 rounded bg-gray-900 p-6 shadow-lg">
+        <h2 className="mb-4 text-lg font-semibold text-gray-100">{title}</h2>
+        <p className="mb-6 text-sm text-gray-200">{message}</p>
+
         <div className="flex justify-end gap-3">
           <button
             onClick={onCancel}
-            className="rounded bg-gray-200 px-4 py-1 text-sm"
+            className="rounded bg-gray-700 px-4 py-2 text-sm text-gray-100 hover:bg-gray-600"
           >
-            Cancel
+            {cancelLabel}
           </button>
           <button
             onClick={onConfirm}
-            className="rounded bg-red-600 px-4 py-1 text-sm text-white"
+            className={
+              confirmLabel === 'Delete'
+                ? 'rounded bg-red-600 px-4 py-2 text-sm text-white hover:bg-red-500'
+                : 'rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-500'
+            }
           >
-            Delete
+            {confirmLabel}
           </button>
         </div>
       </div>
