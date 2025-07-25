@@ -1,54 +1,64 @@
-import { Controller, Post, Body, UseGuards, Req, Res, Get } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Res,
+  HttpCode,
+  UseGuards,
+  Get,
+} from '@nestjs/common';
+import { Response } from 'express';
 import { AuthService } from './auth.service';
-import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { RegisterDto } from './dto/register.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
-import { Request, Response } from 'express';
+import { CurrentUser } from './current-user.decorator';
+import { UserPayload } from './types/user-payload.type';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly auth: AuthService) {}
 
-  /* POST /auth/register */
-  @Post('register')
-  async register(@Body() dto: RegisterDto, @Res({ passthrough: true }) res: Response) {
-    const { accessToken } = await this.auth.register(dto);
-    res.cookie('auth', accessToken, { httpOnly: true, sameSite: 'lax', path: '/' });
-    return { ok: true };
-  }
-
-  /* POST /auth/login */
+  /* ----------  login  ---------- */
   @Post('login')
-  async login(
-  @Body() dto: LoginDto,
-  @Res({ passthrough: true }) res: Response,
-) {
-  const { accessToken } = await this.auth.login(dto);
-
-  res.cookie('auth', accessToken, {
-    httpOnly: true,
-    sameSite: 'lax',
-    path: '/',
-    maxAge: 1000 * 60 * 60 * 24,
-  });
-
-  // 👇 send token back so front-end can decode
-  return { accessToken };
-}
-
-  /* GET /auth/refresh
-     Front-end calls this when access-token expired.
-     Requires a *valid* access token (or exchange flow using refresh cookies—see note below). */
-  @UseGuards(JwtAuthGuard)
-  @Get('refresh')
-  refresh(@Req() req: Request) {
-    const user = req.user as { id: string };
-    return this.auth.refresh(user.id);
+  @HttpCode(200)
+  async login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response) {
+    const { accessToken } = await this.auth.login(dto);
+    res.cookie('access_token', accessToken, {
+      httpOnly: true,
+      sameSite: 'lax',
+      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+    });
+    return { accessToken };
   }
 
-  @UseGuards(JwtAuthGuard)
+  /* ----------  register  ---------- */
+  @Post('register')
+  async register(
+    @Body() dto: RegisterDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const { accessToken } = await this.auth.register(dto);
+    res.cookie('access_token', accessToken, {
+      httpOnly: true,
+      sameSite: 'lax',
+      maxAge: 1000 * 60 * 60 * 24 * 7,
+    });
+    return { accessToken };
+  }
+
+  /* ----------  who-am-I (optional)  ---------- */
   @Get('me')
-  me(@Req() req: Request) {
-    return req.user;                 // { sub, email }
+  @UseGuards(JwtAuthGuard)
+  me(@CurrentUser() user: UserPayload) {
+    return user; // { sub, email }
+  }
+
+  /* ----------  LOGOUT  ---------- */
+  @Post('logout')
+  @HttpCode(200)
+  async logout(@Res({ passthrough: true }) res: Response) {
+    res.clearCookie('access_token', { httpOnly: true, sameSite: 'lax' });
+    return { success: true };
   }
 }
