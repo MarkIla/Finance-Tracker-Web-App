@@ -1,14 +1,14 @@
 import axios from "axios";
 
 const baseURL =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
+  process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8080";
 
 export const api = axios.create({
   baseURL,
   withCredentials: true,
 });
 
-// console.log("API base =", process.env.NEXT_PUBLIC_API_URL);
+console.log("API base =", process.env.NEXT_PUBLIC_API_BASE);
 
 api.interceptors.request.use((cfg) => {
   if (typeof window !== "undefined") {
