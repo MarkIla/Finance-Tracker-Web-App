@@ -14,6 +14,7 @@ RUN npm run build
 FROM node:20-alpine
 WORKDIR /app
 ENV NODE_ENV=production   
+ENV NODE_OPTIONS="--dns-result-order=ipv4first"
 
 # copy only what we need
 COPY --from=build /app/dist          ./dist
@@ -21,4 +22,4 @@ COPY --from=build /app/node_modules  ./node_modules
 COPY package*.json ./
 
 EXPOSE 8080
-CMD [ "node", "dist/main.js" ]
+CMD [ "node", "dist/src/main.js" ]
