@@ -12,6 +12,7 @@ import { Expense } from './expense/expense.entity';
 import { Income } from './income/income.entity';
 import { SummaryModule } from './summary/summary.module';
 import { FilesModule } from './files/files.module';
+import { HealthController } from './health.controller';
 
 
 @Module({
@@ -46,7 +47,7 @@ import { FilesModule } from './files/files.module';
     SummaryModule, 
     FilesModule
   ],
-  controllers: [AppController],
+  controllers: [AppController, HealthController],
   providers: [AppService],
 })
 export class AppModule {}
