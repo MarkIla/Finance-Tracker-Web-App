@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, Repository } from 'typeorm';
 import { Expense } from './expense.entity';
@@ -14,6 +14,12 @@ export class ExpenseService {
 
   /* -------------------- CREATE -------------------- */
   create(dto: CreateExpenseDto, userId: string) {
+
+    const amt = Number(dto.amount);
+    if (!Number.isFinite(amt) || amt <= 0) {
+      throw new BadRequestException('amount must be a positive number');
+    }
+
     const expense = this.repo.create({
       ...dto,
       incurredAt: new Date(dto.incurredAt),
@@ -49,6 +55,12 @@ export class ExpenseService {
   /* -------------------- UPDATE -------------------- */
   async update(id: string, dto: UpdateExpenseDto, userId: string) {
     const exp = await this.findOne(id, userId);
+
+    const amt = Number(dto.amount);
+    if (!Number.isFinite(amt) || amt <= 0) {
+      throw new BadRequestException('amount must be a positive number');
+    }
+
     Object.assign(exp, dto);
     if (dto.incurredAt) exp.incurredAt = new Date(dto.incurredAt);
     if (dto.receiptKey !== undefined) exp.receiptKey = dto.receiptKey || null;

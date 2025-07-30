@@ -59,9 +59,9 @@ describe('ExpenseService', () => {
     expect(repo.save).toHaveBeenCalledTimes(1);
   });
 
-  // it('throws if amount is negative', () => {
-  //   expect(() =>
-  //     service.create({ ...baseDto, amount: '-1.00' } as any, 'uid'),
-  //   ).toThrow();
-  // });
+  it('throws if amount is negative', () => {
+    expect(() =>
+      service.create({ ...baseDto, amount: '-1.00' } as any, 'uid'),
+    ).toThrow();
+  });
 });

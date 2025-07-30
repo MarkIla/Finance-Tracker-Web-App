@@ -4,6 +4,7 @@ import { Income } from './income.entity';
 import { Repository } from 'typeorm';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { CreateIncomeDto } from './dto/create-income.dto';
+import { BadRequestException } from '@nestjs/common';
 
 /* ── repository mock factory ────────────────────────── */
 const repoFactory = () =>
@@ -56,10 +57,10 @@ describe('IncomeService', () => {
     );
     expect(repo.save).toHaveBeenCalledTimes(1);
   });
-
-  // it('rejects negative amount', () => {
-  //   expect(() =>
-  //     service.create({ ...baseDto, amount: '-1.00' } as any, 'u'),
-  //   ).toThrow();
-  // });
+  
+  it('throws if amount is negative', () => {
+    expect(() =>
+      service.create({ ...baseDto, amount: '-1.00' } as any, 'uid'),
+    ).toThrow();
+  });
 });

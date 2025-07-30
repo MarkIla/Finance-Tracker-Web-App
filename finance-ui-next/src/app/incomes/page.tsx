@@ -8,15 +8,13 @@ import {
   useUpdateIncome,
   useDeleteIncome,
 } from '../lib/queries';
-import {
-  presignUpload,
-  checksumHeaders,
-  getPreviewUrl,
-} from '../lib/files';
+import { presignUpload, checksumHeaders, getPreviewUrl } from '../lib/files';
+
 import RequireAuth from '@/components/RequireAuth';
-import DataTable from '@/components/DataTable';
+import DataTable   from '@/components/DataTable';
 import ConfirmModal from '@/components/ConfirmModal';
 
+/* ─────────────────────────── component ─────────────────────────── */
 export default function IncomesPage() {
   /* ─────────────────────────── state ─────────────────────────── */
   const today = new Date();
@@ -24,24 +22,27 @@ export default function IncomesPage() {
     `${today.getUTCFullYear()}-${String(today.getUTCMonth() + 1).padStart(2, '0')}`,
   );
 
-  const incQ = useIncomes(month);
-  const addIncome = useAddIncome();
+  const incQ        = useIncomes(month);
+  const addIncome   = useAddIncome();
   const updateIncome = useUpdateIncome();
   const deleteIncome = useDeleteIncome();
 
-  const [drawer, setDrawer]          = useState(false);
-  const [editingId, setEditingId]    = useState<string | null>(null);
+  const [drawer, setDrawer]       = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+
   const [draft, setDraft] = useState({
     amount: '',
     source: '',
     receivedAt: new Date().toISOString().slice(0, 10),
     note: '',
-    receiptKey: '' as string | null,
+    receiptKey: null as string | null,
   });
-  const [file, setFile]              = useState<File | null>(null);
+
+  const [errors, setErrors]       = useState<{ amount?: string }>({});
+  const [file, setFile]           = useState<File | null>(null);
   const [pendingDelete, setPendingDelete] = useState<null | string>(null);
 
-  /* drawer preview */
+  /* drawer preview ------------------------------------------------- */
   const [drawerPreview, setDrawerPreview] = useState<string | null>(null);
   useEffect(() => {
     if (draft.receiptKey) {
@@ -51,12 +52,12 @@ export default function IncomesPage() {
     }
   }, [draft.receiptKey]);
 
-  /* hover preview */
-  const tableRef          = useRef<HTMLDivElement>(null);
+  /* hover preview -------------------------------------------------- */
+  const tableRef           = useRef<HTMLDivElement>(null);
   const [hoverUrl, setHoverUrl] = useState<string | null>(null);
   const [hoverPos, setHoverPos] = useState({ x: 0, y: 0 });
 
-  /* ─────────────────────────── handlers ───────────────────────── */
+  /* ─────────────────────────── handlers ─────────────────────────── */
   function openAdd() {
     setEditingId(null);
     setDraft({
@@ -66,6 +67,7 @@ export default function IncomesPage() {
       note: '',
       receiptKey: null,
     });
+    setErrors({});
     setFile(null);
     setDrawer(true);
   }
@@ -79,6 +81,7 @@ export default function IncomesPage() {
       note: row.note ?? '',
       receiptKey: row.receiptKey ?? null,
     });
+    setErrors({});
     setFile(null);
     setDrawer(true);
   }
@@ -86,14 +89,25 @@ export default function IncomesPage() {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
 
+    /* amount validation */
+    const amt = Number(draft.amount);
+    if (!Number.isFinite(amt) || amt <= 0) {
+      setErrors({ amount: 'Amount must be a positive number' });
+      return;
+    }
+    setErrors({}); // clear previous errors
+
+    /* file-type validation */
     if (file && !['image/png', 'image/jpeg'].includes(file.type)) {
       alert('Only PNG and JPG images are allowed.');
       return;
     }
 
+    /* upload receipt if any */
     let receiptKey = draft.receiptKey;
     if (file) {
       const { key, url } = await presignUpload(file);
+      console.log(url); 
       await fetch(url, {
         method: 'PUT',
         headers: { 'Content-Type': file.type, ...checksumHeaders(url) },
@@ -116,6 +130,8 @@ export default function IncomesPage() {
     setHoverPos({ x: ev.clientX - (rect?.left ?? 0) + 16, y: ev.clientY + 16 });
     setHoverUrl(await getPreviewUrl(key));
   }
+
+  const isAmountValid = Number(draft.amount) > 0;
 
   /* ─────────────────────────── render ─────────────────────────── */
   return (
@@ -212,6 +228,7 @@ export default function IncomesPage() {
           )}
         </div>
 
+        {/* hover preview */}
         {hoverUrl && (
           <img
             src={hoverUrl}
@@ -238,14 +255,22 @@ export default function IncomesPage() {
                 />
               )}
 
+              {/* amount */}
               <input
-                className="mb-3 w-full rounded border border-gray-600 bg-gray-800 p-2"
+                className={`mb-1 w-full rounded border bg-gray-800 p-2
+                            ${errors.amount ? 'border-red-500' : 'border-gray-600'}`}
                 type="number"
                 step="0.01"
+                min="0.01"
                 placeholder="Amount"
                 value={draft.amount}
                 onChange={(e) => setDraft({ ...draft, amount: e.target.value })}
               />
+              {errors.amount && (
+                <p className="mb-2 text-xs text-red-500">{errors.amount}</p>
+              )}
+
+              {/* other fields */}
               <input
                 className="mb-3 w-full rounded border border-gray-600 bg-gray-800 p-2"
                 placeholder="Source"
@@ -265,6 +290,7 @@ export default function IncomesPage() {
                 onChange={(e) => setDraft({ ...draft, note: e.target.value })}
               />
 
+              {/* receipt upload */}
               <label className="mb-4 block text-sm">
                 Receipt (PNG / JPG):
                 <input
@@ -275,7 +301,15 @@ export default function IncomesPage() {
                 />
               </label>
 
-              <button className="w-full rounded bg-emerald-600 py-2 text-white hover:bg-emerald-500">
+              <button
+                disabled={!isAmountValid}
+                className={`w-full rounded py-2 text-white
+                            ${
+                              isAmountValid
+                                ? 'bg-emerald-600 hover:bg-emerald-500'
+                                : 'bg-gray-700 opacity-60'
+                            }`}
+              >
                 {editingId ? 'Save changes' : 'Save'}
               </button>
               <button
@@ -289,6 +323,7 @@ export default function IncomesPage() {
           </div>
         )}
 
+        {/* delete confirm */}
         {pendingDelete && (
           <ConfirmModal
             title="Delete income"

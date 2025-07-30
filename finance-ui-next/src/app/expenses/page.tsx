@@ -8,37 +8,38 @@ import {
   useUpdateExpense,
   useDeleteExpense,
 } from '../lib/queries';
-import {
-  presignUpload,
-  checksumHeaders,
-  getPreviewUrl,
-} from '../lib/files';
-import RequireAuth from '@/components/RequireAuth';
-import DataTable from '@/components/DataTable';
-import ConfirmModal from '@/components/ConfirmModal';
+import { presignUpload, checksumHeaders, getPreviewUrl } from '../lib/files';
 
+import RequireAuth    from '@/components/RequireAuth';
+import DataTable       from '@/components/DataTable';
+import ConfirmModal    from '@/components/ConfirmModal';
+
+/* ─────────────────────────── component ─────────────────────────── */
 export default function ExpensesPage() {
-  /* ─────────────────────────── state ─────────────────────────── */
+  /* ───────────────────────── state ───────────────────────── */
   const today = new Date();
   const [month, setMonth] = useState(
     `${today.getUTCFullYear()}-${String(today.getUTCMonth() + 1).padStart(2, '0')}`,
   );
 
-  const exQ = useExpenses(month);
-  const addExpense = useAddExpense();
-  const updateExpense = useUpdateExpense();
-  const deleteExpense = useDeleteExpense();
+  const exQ            = useExpenses(month);
+  const addExpense     = useAddExpense();
+  const updateExpense  = useUpdateExpense();
+  const deleteExpense  = useDeleteExpense();
 
-  const [drawer, setDrawer]          = useState(false);
-  const [editingId, setEditingId]    = useState<string | null>(null);
+  const [drawer, setDrawer]         = useState(false);
+  const [editingId, setEditingId]   = useState<string | null>(null);
+
   const [draft, setDraft] = useState({
     amount: '',
     category: '',
     incurredAt: new Date().toISOString().slice(0, 10),
     note: '',
-    receiptKey: '' as string | null,
+    receiptKey: null as string | null,
   });
-  const [file, setFile]              = useState<File | null>(null);
+
+  const [errors, setErrors]         = useState<{ amount?: string }>({});
+  const [file, setFile]             = useState<File | null>(null);
   const [pendingDelete, setPendingDelete] = useState<null | string>(null);
 
   /* drawer preview */
@@ -52,11 +53,11 @@ export default function ExpensesPage() {
   }, [draft.receiptKey]);
 
   /* hover preview */
-  const tableRef          = useRef<HTMLDivElement>(null);
+  const tableRef         = useRef<HTMLDivElement>(null);
   const [hoverUrl, setHoverUrl] = useState<string | null>(null);
   const [hoverPos, setHoverPos] = useState({ x: 0, y: 0 });
 
-  /* ─────────────────────────── handlers ───────────────────────── */
+  /* ───────────────────────── handlers ───────────────────────── */
   function openAdd() {
     setEditingId(null);
     setDraft({
@@ -66,6 +67,7 @@ export default function ExpensesPage() {
       note: '',
       receiptKey: null,
     });
+    setErrors({});
     setFile(null);
     setDrawer(true);
   }
@@ -79,6 +81,7 @@ export default function ExpensesPage() {
       note: row.note ?? '',
       receiptKey: row.receiptKey ?? null,
     });
+    setErrors({});
     setFile(null);
     setDrawer(true);
   }
@@ -86,26 +89,37 @@ export default function ExpensesPage() {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
 
+    /* amount validation */
+    const amt = Number(draft.amount);
+    if (!Number.isFinite(amt) || amt <= 0) {
+      setErrors({ amount: 'Amount must be a positive number' });
+      return;
+    }
+    setErrors({}); // clear previous errors
+
+    /* file-type validation */
     if (file && !['image/png', 'image/jpeg'].includes(file.type)) {
       alert('Only PNG and JPG images are allowed.');
       return;
     }
 
+    /* upload receipt if needed */
     let receiptKey = draft.receiptKey;
     if (file) {
       const { key, url } = await presignUpload(file);
       await fetch(url, {
-        method: 'PUT',
+        method : 'PUT',
         headers: { 'Content-Type': file.type, ...checksumHeaders(url) },
-        body: file,
+        body   : file,
       });
       receiptKey = key;
     }
 
-    const body = { ...draft, amount: Number(draft.amount), receiptKey };
+    const body = { ...draft, amount: amt, receiptKey };
 
-    if (editingId) updateExpense.mutate({ id: editingId, body });
-    else addExpense.mutate(body);
+    editingId
+      ? updateExpense.mutate({ id: editingId, body })
+      : addExpense.mutate(body);
 
     setDrawer(false);
   }
@@ -116,10 +130,13 @@ export default function ExpensesPage() {
     setHoverUrl(await getPreviewUrl(key));
   }
 
-  /* ─────────────────────────── render ─────────────────────────── */
+  const isAmountValid = Number(draft.amount) > 0;
+
+  /* ───────────────────────── render ───────────────────────── */
   return (
     <RequireAuth>
       <main className="p-8 text-gray-100">
+        {/* header */}
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <Link
@@ -139,6 +156,7 @@ export default function ExpensesPage() {
           </button>
         </div>
 
+        {/* month picker */}
         <label className="mb-4 inline-block text-sm">
           Month:{' '}
           <input
@@ -149,6 +167,7 @@ export default function ExpensesPage() {
           />
         </label>
 
+        {/* table */}
         <div ref={tableRef}>
           {exQ.isLoading ? (
             <p className="text-gray-400">Loading…</p>
@@ -210,6 +229,7 @@ export default function ExpensesPage() {
           )}
         </div>
 
+        {/* hover preview */}
         {hoverUrl && (
           <img
             src={hoverUrl}
@@ -218,6 +238,7 @@ export default function ExpensesPage() {
           />
         )}
 
+        {/* drawer */}
         {drawer && (
           <div className="fixed inset-0 z-40 bg-black/50">
             <form
@@ -235,14 +256,22 @@ export default function ExpensesPage() {
                 />
               )}
 
+              {/* amount + helper */}
               <input
-                className="mb-3 w-full rounded border border-gray-600 bg-gray-800 p-2"
+                className={`mb-1 w-full rounded border bg-gray-800 p-2
+                            ${errors.amount ? 'border-red-500' : 'border-gray-600'}`}
                 type="number"
                 step="0.01"
+                min="0.01"
                 placeholder="Amount"
                 value={draft.amount}
                 onChange={(e) => setDraft({ ...draft, amount: e.target.value })}
               />
+              {errors.amount && (
+                <p className="mb-2 text-xs text-red-500">{errors.amount}</p>
+              )}
+
+              {/* rest of the fields */}
               <input
                 className="mb-3 w-full rounded border border-gray-600 bg-gray-800 p-2"
                 placeholder="Category"
@@ -262,6 +291,7 @@ export default function ExpensesPage() {
                 onChange={(e) => setDraft({ ...draft, note: e.target.value })}
               />
 
+              {/* receipt upload */}
               <label className="mb-4 block text-sm">
                 Receipt (PNG / JPG):
                 <input
@@ -272,7 +302,15 @@ export default function ExpensesPage() {
                 />
               </label>
 
-              <button className="w-full rounded bg-emerald-600 py-2 text-white hover:bg-emerald-500">
+              <button
+                disabled={!isAmountValid}
+                className={`w-full rounded py-2 text-white
+                            ${
+                              isAmountValid
+                                ? 'bg-emerald-600 hover:bg-emerald-500'
+                                : 'bg-gray-700 opacity-60'
+                            }`}
+              >
                 {editingId ? 'Save changes' : 'Save'}
               </button>
               <button
@@ -286,6 +324,7 @@ export default function ExpensesPage() {
           </div>
         )}
 
+        {/* delete confirm */}
         {pendingDelete && (
           <ConfirmModal
             title="Delete expense"
